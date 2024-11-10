@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// schema.prisma
+
+model Farmer {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  password     String
+  location     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relations
+  crops        Crop[]     // Farmer's crops
+}
+
+model FactoryOfficial {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  password     String
+  location     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  purchases Purchase[]
+  
+  // Relations
+  orders       Order[]    // Factory official's orders
+}
+
+model Crop {
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  quantity     Int
+  price        Float
+  harvestDate  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Foreign Key to Farmer
+  farmer       Farmer     @relation(fields: [farmerId], references: [id])
+  farmerId     Int
+  
+  // Orders containing this crop
+  orders       Order[]
+  purchases Purchase[]
+}
+
+model Order {
+  id           Int       @id @default(autoincrement())
+  quantity     Int
+  totalPrice   Float
+  status       OrderStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Foreign Keys
+  crop         Crop         @relation(fields: [cropId], references: [id])
+  cropId       Int
+  factory      FactoryOfficial @relation(fields: [factoryId], references: [id])
+  factoryId    Int
+}
+
+model Purchase {
+  id              Int            @id @default(autoincrement())
+  factoryOfficial FactoryOfficial @relation(fields: [factoryOfficialId], references: [id])
+  factoryOfficialId Int
+  crop            Crop           @relation(fields: [cropId], references: [id])
+  cropId          Int
+  quantity        Int
+  
+  purchaseDate    DateTime       @default(now())
+}
+
+// Enum for order statuses
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
